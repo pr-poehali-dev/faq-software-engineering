@@ -181,30 +181,7 @@ const topics: Topic[] = [
       }
     ]
   },
-  {
-    id: 'requirements',
-    title: 'Требования к ПО',
-    icon: 'FileText',
-    description: 'Сбор и управление требованиями',
-    questions: [
-      {
-        question: 'Что такое требования к ПО?',
-        answer: 'Требования — это описание того, что должна делать система и какими свойствами обладать. Делятся на функциональные (что система делает) и нефункциональные (как система это делает).'
-      },
-      {
-        question: 'Что такое User Story?',
-        answer: 'User Story — краткое описание функциональности с точки зрения пользователя. Формат: "Как [роль] я хочу [действие], чтобы [результат]". Например: "Как покупатель я хочу добавить товар в корзину, чтобы купить его позже".'
-      },
-      {
-        question: 'Что такое MVP?',
-        answer: 'MVP (Minimum Viable Product) — минимально жизнеспособный продукт с базовой функциональностью для проверки гипотез. Позволяет получить обратную связь от пользователей на ранних этапах с минимальными затратами.'
-      },
-      {
-        question: 'Что такое нефункциональные требования?',
-        answer: 'Нефункциональные требования описывают качественные характеристики системы: производительность, безопасность, надежность, масштабируемость, удобство использования. Например: "Система должна обрабатывать 1000 запросов в секунду".'
-      }
-    ]
-  }
+
 ];
 
 const quizzes: Quiz[] = [
@@ -309,7 +286,7 @@ export default function Index() {
   const [currentView, setCurrentView] = useState<ViewType>('home');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Topic[]>([]);
-  const [userName, setUserName] = useState('Студент');
+  const [userName, setUserName] = useState('student123');
   const [userEmail, setUserEmail] = useState('student@se.guide');
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [testHistory, setTestHistory] = useState<TestHistory[]>([
@@ -540,70 +517,6 @@ export default function Index() {
                     </Badge>
                   </div>
                 </div>
-
-                <div className="grid md:grid-cols-2 gap-6 mt-12">
-                  <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setCurrentView('topics')}>
-                    <CardHeader>
-                      <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-3">
-                        <Icon name="BookOpen" className="text-primary" size={24} />
-                      </div>
-                      <CardTitle>База знаний</CardTitle>
-                      <CardDescription>
-                        {topics.length} тем с подробными ответами на часто задаваемые вопросы
-                      </CardDescription>
-                    </CardHeader>
-                  </Card>
-
-                  <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setCurrentView('diagnostics')}>
-                    <CardHeader>
-                      <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-3">
-                        <Icon name="Brain" className="text-primary" size={24} />
-                      </div>
-                      <CardTitle>Диагностика знаний</CardTitle>
-                      <CardDescription>
-                        Тесты для проверки понимания основ программной инженерии
-                      </CardDescription>
-                    </CardHeader>
-                  </Card>
-                </div>
-
-                {testHistory.length > 0 && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Icon name="TrendingUp" size={20} />
-                        Ваш прогресс
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        <div>
-                          <div className="flex justify-between mb-2">
-                            <span className="text-sm font-medium">Общий результат</span>
-                            <span className="text-sm font-medium">{calculateTotalProgress()}%</span>
-                          </div>
-                          <Progress value={calculateTotalProgress()} />
-                        </div>
-                        <div className="grid grid-cols-3 gap-4 pt-4">
-                          <div className="text-center">
-                            <div className="text-2xl font-bold text-primary">{testHistory.length}</div>
-                            <div className="text-xs text-muted-foreground">Тестов пройдено</div>
-                          </div>
-                          <div className="text-center">
-                            <div className="text-2xl font-bold text-primary">
-                              {testHistory.reduce((sum, t) => sum + t.score, 0)}
-                            </div>
-                            <div className="text-xs text-muted-foreground">Правильных ответов</div>
-                          </div>
-                          <div className="text-center">
-                            <div className="text-2xl font-bold text-primary">{calculateTotalProgress()}%</div>
-                            <div className="text-xs text-muted-foreground">Средний балл</div>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
               </div>
             )}
 
@@ -835,16 +748,16 @@ export default function Index() {
                     {isEditingProfile ? (
                       <div className="space-y-4">
                         <div>
-                          <Label htmlFor="name">Имя</Label>
+                          <Label htmlFor="login">Логин</Label>
                           <Input
-                            id="name"
+                            id="login"
                             value={userName}
                             onChange={(e) => setUserName(e.target.value)}
                             className="mt-1"
                           />
                         </div>
                         <div>
-                          <Label htmlFor="email">Email</Label>
+                          <Label htmlFor="email">Почта</Label>
                           <Input
                             id="email"
                             type="email"
@@ -865,13 +778,14 @@ export default function Index() {
                       </div>
                     ) : (
                       <div className="space-y-4">
-                        <div className="flex items-center gap-4">
-                          <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center">
-                            <Icon name="User" size={32} className="text-primary" />
+                        <div className="space-y-3">
+                          <div>
+                            <p className="text-sm text-muted-foreground mb-1">Логин</p>
+                            <p className="font-medium">{userName}</p>
                           </div>
                           <div>
-                            <p className="font-semibold text-lg">{userName}</p>
-                            <p className="text-muted-foreground">{userEmail}</p>
+                            <p className="text-sm text-muted-foreground mb-1">Почта</p>
+                            <p className="font-medium">{userEmail}</p>
                           </div>
                         </div>
                         <Button variant="outline" onClick={() => setIsEditingProfile(true)}>
