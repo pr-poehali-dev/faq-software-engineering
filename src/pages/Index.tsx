@@ -8,7 +8,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
-type ViewType = 'home' | 'profile' | 'topics' | 'diagnostics';
+type ViewType = 'home' | 'profile' | 'topics' | 'diagnostics' | 'search-results';
 
 interface Topic {
   id: string;
@@ -144,11 +144,16 @@ const quizQuestions: Quiz[] = [
 export default function Index() {
   const [currentView, setCurrentView] = useState<ViewType>('home');
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState('');
   const [quizProgress, setQuizProgress] = useState(0);
   const [currentQuizIndex, setCurrentQuizIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [showResult, setShowResult] = useState(false);
   const [score, setScore] = useState(0);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [userName, setUserName] = useState('Студент');
+  const [userEmail, setUserEmail] = useState('student@se.guide');
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
 
   const handleQuizAnswer = (answerIndex: number) => {
     setSelectedAnswer(answerIndex);
@@ -221,23 +226,23 @@ export default function Index() {
           </button>
 
           <button
-            onClick={() => setCurrentView('topics')}
-            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-              currentView === 'topics' ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'hover:bg-sidebar-accent/50'
-            }`}
-          >
-            <Icon name="BookOpen" size={20} />
-            <span className="font-medium">Темы</span>
-          </button>
-
-          <button
             onClick={() => setCurrentView('diagnostics')}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
               currentView === 'diagnostics' ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'hover:bg-sidebar-accent/50'
             }`}
           >
             <Icon name="Brain" size={20} />
-            <span className="font-medium">Диагностика</span>
+            <span className="font-medium">Диагностика знаний</span>
+          </button>
+
+          <button
+            onClick={() => setCurrentView('topics')}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
+              currentView === 'topics' ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'hover:bg-sidebar-accent/50'
+            }`}
+          >
+            <Icon name="BookOpen" size={20} />
+            <span className="font-medium">База знаний</span>
           </button>
         </nav>
 
@@ -247,8 +252,8 @@ export default function Index() {
               <Icon name="User" size={16} className="text-primary" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">Студент</p>
-              <p className="text-xs text-muted-foreground">student@se.guide</p>
+              <p className="text-sm font-medium truncate">{userName}</p>
+              <p className="text-xs text-muted-foreground">{userEmail}</p>
             </div>
           </div>
         </div>
@@ -259,25 +264,58 @@ export default function Index() {
           <div className="max-w-4xl mx-auto p-8">
             {currentView === 'home' && (
               <div className="animate-fade-in space-y-8">
-                <div className="text-center py-12">
-                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-6">
-                    <Icon name="Sparkles" className="text-primary" size={32} />
+                <div className="text-center py-16">
+                  <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 mb-6 animate-scale-in">
+                    <Icon name="Sparkles" className="text-primary" size={40} />
                   </div>
-                  <h2 className="text-3xl font-bold mb-4">Что вы хотите узнать?</h2>
-                  <p className="text-muted-foreground mb-8">Найдите ответы на вопросы по программной инженерии</p>
+                  <h2 className="text-4xl font-bold mb-3">Что вы хотите узнать?</h2>
+                  <p className="text-muted-foreground mb-10 text-lg">Найдите ответы на вопросы по программной инженерии</p>
                   
                   <div className="relative max-w-2xl mx-auto">
                     <Input
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Поиск по темам..."
-                      className="h-14 pl-12 pr-4 text-lg bg-card border-border"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && searchQuery.trim()) {
+                          setSearchResults(searchQuery);
+                          setCurrentView('search-results');
+                        }
+                      }}
+                      placeholder="Введите ваш вопрос..."
+                      className="h-16 pl-14 pr-14 text-lg bg-card border-2 border-border hover:border-primary/50 focus:border-primary transition-colors rounded-2xl shadow-lg"
                     />
-                    <Icon name="Search" className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={20} />
+                    <Icon name="Search" className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground" size={22} />
+                    {searchQuery && (
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          setSearchResults(searchQuery);
+                          setCurrentView('search-results');
+                        }}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-xl"
+                      >
+                        Найти
+                      </Button>
+                    )}
+                  </div>
+                  
+                  <div className="mt-8 flex flex-wrap justify-center gap-2">
+                    <Badge variant="outline" className="cursor-pointer hover:bg-primary/10 transition-colors"
+                      onClick={() => { setSearchQuery('Что такое SDLC?'); }}>
+                      Что такое SDLC?
+                    </Badge>
+                    <Badge variant="outline" className="cursor-pointer hover:bg-primary/10 transition-colors"
+                      onClick={() => { setSearchQuery('Паттерны проектирования'); }}>
+                      Паттерны проектирования
+                    </Badge>
+                    <Badge variant="outline" className="cursor-pointer hover:bg-primary/10 transition-colors"
+                      onClick={() => { setSearchQuery('Методы тестирования'); }}>
+                      Методы тестирования
+                    </Badge>
                   </div>
                 </div>
 
-                {searchQuery ? (
+                {false && searchQuery ? (
                   <div className="space-y-6">
                     <h3 className="text-xl font-semibold">Результаты поиска</h3>
                     {filteredTopics.length > 0 ? (
@@ -314,35 +352,21 @@ export default function Index() {
                       </Card>
                     )}
                   </div>
-                ) : (
-                  <div className="grid grid-cols-2 gap-4">
-                    {topics.map(topic => (
-                      <Card 
-                        key={topic.id} 
-                        className="cursor-pointer hover:bg-card/80 transition-colors animate-scale-in"
-                        onClick={() => setCurrentView('topics')}
-                      >
-                        <CardHeader>
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                              <Icon name={topic.icon as any} className="text-primary" size={20} />
-                            </div>
-                            <div>
-                              <CardTitle className="text-base">{topic.title}</CardTitle>
-                              <CardDescription>{topic.questions.length} вопросов</CardDescription>
-                            </div>
-                          </div>
-                        </CardHeader>
-                      </Card>
-                    ))}
-                  </div>
-                )}
+                ) : null}
               </div>
             )}
 
             {currentView === 'profile' && (
               <div className="animate-fade-in space-y-6">
-                <h2 className="text-3xl font-bold mb-8">Профиль</h2>
+                <div className="flex items-center justify-between mb-8">
+                  <h2 className="text-3xl font-bold">Профиль</h2>
+                  {!isEditingProfile && (
+                    <Button variant="outline" onClick={() => setIsEditingProfile(true)}>
+                      <Icon name="Pencil" size={16} className="mr-2" />
+                      Редактировать
+                    </Button>
+                  )}
+                </div>
                 
                 <Card>
                   <CardHeader>
@@ -350,10 +374,40 @@ export default function Index() {
                       <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center">
                         <Icon name="User" size={32} className="text-primary" />
                       </div>
-                      <div>
-                        <CardTitle>Студент</CardTitle>
-                        <CardDescription>student@se.guide</CardDescription>
+                      <div className="flex-1">
+                        {isEditingProfile ? (
+                          <div className="space-y-2">
+                            <Input
+                              value={userName}
+                              onChange={(e) => setUserName(e.target.value)}
+                              placeholder="Имя"
+                              className="font-semibold"
+                            />
+                            <Input
+                              value={userEmail}
+                              onChange={(e) => setUserEmail(e.target.value)}
+                              placeholder="Email"
+                              type="email"
+                            />
+                          </div>
+                        ) : (
+                          <div>
+                            <CardTitle>{userName}</CardTitle>
+                            <CardDescription>{userEmail}</CardDescription>
+                          </div>
+                        )}
                       </div>
+                      {isEditingProfile && (
+                        <div className="flex gap-2">
+                          <Button size="sm" onClick={() => setIsEditingProfile(false)}>
+                            <Icon name="Check" size={16} className="mr-1" />
+                            Сохранить
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => setIsEditingProfile(false)}>
+                            Отмена
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </CardHeader>
                 </Card>
@@ -377,12 +431,57 @@ export default function Index() {
                     </div>
                   </CardContent>
                 </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>История прохождения тестов</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                            <Icon name="CheckCircle2" className="text-primary" size={20} />
+                          </div>
+                          <div>
+                            <p className="font-medium text-sm">Общий тест по SE</p>
+                            <p className="text-xs text-muted-foreground">2 дня назад</p>
+                          </div>
+                        </div>
+                        <Badge variant="secondary">85%</Badge>
+                      </div>
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                            <Icon name="CheckCircle2" className="text-primary" size={20} />
+                          </div>
+                          <div>
+                            <p className="font-medium text-sm">SDLC модели</p>
+                            <p className="text-xs text-muted-foreground">5 дней назад</p>
+                          </div>
+                        </div>
+                        <Badge variant="secondary">90%</Badge>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             )}
 
             {currentView === 'topics' && (
               <div className="animate-fade-in space-y-6">
-                <h2 className="text-3xl font-bold mb-8">Темы</h2>
+                <div className="mb-8">
+                  <h2 className="text-3xl font-bold mb-2">База знаний</h2>
+                  <p className="text-muted-foreground">Структурированный каталог материалов по программной инженерии</p>
+                </div>
+                
+                <div className="relative max-w-xl mb-6">
+                  <Input
+                    placeholder="Фильтр по темам..."
+                    className="pl-10 bg-card"
+                  />
+                  <Icon name="Filter" className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+                </div>
                 
                 {topics.map(topic => (
                   <Card key={topic.id}>
@@ -413,6 +512,64 @@ export default function Index() {
                     </CardContent>
                   </Card>
                 ))}
+              </div>
+            )}
+
+            {currentView === 'search-results' && (
+              <div className="animate-fade-in space-y-6">
+                <div className="flex items-center gap-4 mb-8">
+                  <Button variant="ghost" size="icon" onClick={() => setCurrentView('home')}>
+                    <Icon name="ArrowLeft" size={20} />
+                  </Button>
+                  <div>
+                    <h2 className="text-3xl font-bold">Результаты поиска</h2>
+                    <p className="text-muted-foreground">Запрос: "{searchResults}"</p>
+                  </div>
+                </div>
+
+                {filteredTopics.length > 0 ? (
+                  filteredTopics.map(topic => (
+                    <Card key={topic.id} className="animate-scale-in">
+                      <CardHeader>
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                            <Icon name={topic.icon as any} className="text-primary" size={24} />
+                          </div>
+                          <div>
+                            <CardTitle>{topic.title}</CardTitle>
+                            <CardDescription>{topic.questions.length} найдено</CardDescription>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <Accordion type="single" collapsible className="space-y-2">
+                          {topic.questions.map((q, idx) => (
+                            <AccordionItem key={idx} value={`${topic.id}-${idx}`} className="border border-border rounded-lg px-4">
+                              <AccordionTrigger className="hover:no-underline">
+                                {q.question}
+                              </AccordionTrigger>
+                              <AccordionContent className="text-muted-foreground">
+                                {q.answer}
+                              </AccordionContent>
+                            </AccordionItem>
+                          ))}
+                        </Accordion>
+                      </CardContent>
+                    </Card>
+                  ))
+                ) : (
+                  <Card>
+                    <CardContent className="py-16 text-center">
+                      <Icon name="SearchX" className="mx-auto mb-4 text-muted-foreground" size={56} />
+                      <h3 className="text-xl font-semibold mb-2">Ничего не найдено</h3>
+                      <p className="text-muted-foreground mb-6">Попробуйте изменить запрос или просмотрите все темы</p>
+                      <Button onClick={() => setCurrentView('topics')}>
+                        <Icon name="BookOpen" className="mr-2" size={18} />
+                        Посмотреть все темы
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
             )}
 
