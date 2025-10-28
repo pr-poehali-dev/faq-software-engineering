@@ -907,35 +907,6 @@ export default function Index() {
                   </CardContent>
                 </Card>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle>История тестов</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {testHistory.length === 0 ? (
-                        <p className="text-center text-muted-foreground py-8">Вы еще не проходили тесты</p>
-                      ) : (
-                        testHistory.map((test, idx) => (
-                          <div key={idx} className="flex items-center justify-between p-4 rounded-lg border border-border">
-                            <div className="flex-1">
-                              <p className="font-medium">{test.topic}</p>
-                              <p className="text-sm text-muted-foreground">{test.date}</p>
-                            </div>
-                            <div className="flex items-center gap-4">
-                              <Badge variant={test.score / test.total >= 0.7 ? 'default' : 'secondary'}>
-                                {test.score} / {test.total}
-                              </Badge>
-                              <div className="text-right">
-                                <div className="font-semibold">{Math.round((test.score / test.total) * 100)}%</div>
-                              </div>
-                            </div>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
               </div>
             )}
 
