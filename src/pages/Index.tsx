@@ -1,19 +1,22 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Icon from '@/components/ui/icon';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
-type ViewType = 'home' | 'profile' | 'topics' | 'diagnostics' | 'search-results';
+type ViewType = 'home' | 'profile' | 'topics' | 'diagnostics' | 'search-results' | 'quiz-active';
 
 interface Topic {
   id: string;
   title: string;
   icon: string;
+  description: string;
   questions: Question[];
 }
 
@@ -27,6 +30,14 @@ interface Quiz {
   question: string;
   options: string[];
   correct: number;
+  topic: string;
+}
+
+interface TestHistory {
+  date: string;
+  topic: string;
+  score: number;
+  total: number;
 }
 
 const topics: Topic[] = [
@@ -34,6 +45,7 @@ const topics: Topic[] = [
     id: 'sdlc',
     title: 'Жизненный цикл разработки ПО',
     icon: 'GitBranch',
+    description: 'Основные этапы и модели разработки программного обеспечения',
     questions: [
       {
         question: 'Что такое SDLC?',
@@ -46,6 +58,14 @@ const topics: Topic[] = [
       {
         question: 'В чем отличие Agile от Waterfall?',
         answer: 'Waterfall — последовательная модель с четкими этапами, требует завершения каждого этапа перед переходом к следующему. Agile — итеративная модель с короткими циклами разработки (спринтами), позволяет быстро адаптироваться к изменениям требований.'
+      },
+      {
+        question: 'Что такое спринт в Agile?',
+        answer: 'Спринт — это короткий временной промежуток (обычно 1-4 недели), в течение которого команда разработки создает готовую к использованию версию продукта. По окончании спринта проводится демонстрация результатов и планирование следующего спринта.'
+      },
+      {
+        question: 'Какие роли есть в Scrum?',
+        answer: 'Основные роли в Scrum: Product Owner (владелец продукта) — определяет требования и приоритеты, Scrum Master — помогает команде следовать процессу, Development Team (команда разработки) — создает продукт.'
       }
     ]
   },
@@ -53,6 +73,7 @@ const topics: Topic[] = [
     id: 'design-patterns',
     title: 'Паттерны проектирования',
     icon: 'Puzzle',
+    description: 'Типовые решения архитектурных задач в разработке',
     questions: [
       {
         question: 'Что такое паттерн проектирования?',
@@ -65,6 +86,14 @@ const topics: Topic[] = [
       {
         question: 'Что такое паттерн Singleton?',
         answer: 'Singleton — порождающий паттерн, который гарантирует существование только одного экземпляра класса и предоставляет глобальную точку доступа к этому экземпляру. Используется для логгеров, конфигураций, пулов соединений.'
+      },
+      {
+        question: 'Что такое паттерн Factory?',
+        answer: 'Factory (Фабрика) — порождающий паттерн, который определяет общий интерфейс для создания объектов, позволяя подклассам изменять тип создаваемых объектов. Используется когда заранее неизвестен тип создаваемого объекта.'
+      },
+      {
+        question: 'Что такое паттерн Observer?',
+        answer: 'Observer (Наблюдатель) — поведенческий паттерн, который создает механизм подписки для оповещения нескольких объектов о событиях. Используется для реализации событийных систем и реактивного программирования.'
       }
     ]
   },
@@ -72,6 +101,7 @@ const topics: Topic[] = [
     id: 'testing',
     title: 'Тестирование ПО',
     icon: 'FlaskConical',
+    description: 'Методы и уровни тестирования программных систем',
     questions: [
       {
         question: 'Какие уровни тестирования существуют?',
@@ -84,6 +114,14 @@ const topics: Topic[] = [
       {
         question: 'В чем разница между Black Box и White Box тестированием?',
         answer: 'Black Box — тестирование без знания внутренней структуры кода, проверяет только функциональность. White Box — тестирование с полным знанием внутренней структуры, проверяет логику и пути выполнения кода.'
+      },
+      {
+        question: 'Что такое регрессионное тестирование?',
+        answer: 'Регрессионное тестирование — это повторное тестирование системы после внесения изменений для проверки, что новый код не нарушил существующую функциональность. Обычно автоматизируется.'
+      },
+      {
+        question: 'Что такое smoke testing?',
+        answer: 'Smoke testing — это предварительная проверка критически важной функциональности системы. Если базовые функции не работают, дальнейшее тестирование не имеет смысла. Это быстрый тест стабильности сборки.'
       }
     ]
   },
@@ -91,6 +129,7 @@ const topics: Topic[] = [
     id: 'version-control',
     title: 'Системы контроля версий',
     icon: 'GitCommitHorizontal',
+    description: 'Git и основные принципы работы с версиями кода',
     questions: [
       {
         question: 'Зачем нужны системы контроля версий?',
@@ -98,109 +137,287 @@ const topics: Topic[] = [
       },
       {
         question: 'Что такое Git и как он работает?',
-        answer: 'Git — распределенная система контроля версий. Каждый разработчик имеет полную копию репозитория. Основные концепции: commit (фиксация изменений), branch (ветка для параллельной разработки), merge (слияние веток), pull/push (синхронизация с удаленным репозиторием).'
+        answer: 'Git — распределенная система контроля версий. Каждый разработчик имеет полную копию репозитория. Основные операции: commit (фиксация изменений), push (отправка на сервер), pull (получение изменений), branch (ветвление).'
       },
       {
-        question: 'Что такое Git Flow?',
-        answer: 'Git Flow — модель ветвления в Git с четкой структурой: master (production), develop (разработка), feature/* (новые функции), release/* (подготовка релиза), hotfix/* (срочные исправления). Обеспечивает организованный процесс разработки.'
+        question: 'Что такое ветка (branch) в Git?',
+        answer: 'Ветка — это независимая линия разработки. Позволяет работать над новой функциональностью, не затрагивая основной код. После завершения работы ветка сливается (merge) с основной веткой.'
+      },
+      {
+        question: 'Что такое pull request?',
+        answer: 'Pull Request (PR) — это запрос на слияние изменений из одной ветки в другую. Позволяет провести код-ревью перед включением изменений в основную кодовую базу. Используется для контроля качества кода.'
+      },
+      {
+        question: 'Как разрешить конфликт слияния?',
+        answer: 'Конфликт возникает когда два разработчика изменили одни и те же строки. Для разрешения нужно: открыть файл с конфликтом, выбрать нужные изменения (или объединить их вручную), удалить маркеры конфликта, сделать commit.'
+      }
+    ]
+  },
+  {
+    id: 'architecture',
+    title: 'Архитектура ПО',
+    icon: 'Building2',
+    description: 'Принципы построения программных систем',
+    questions: [
+      {
+        question: 'Что такое архитектура ПО?',
+        answer: 'Архитектура ПО — это структура системы, включающая компоненты программного обеспечения, их свойства и связи между ними. Определяет, как система организована на высоком уровне.'
+      },
+      {
+        question: 'Что такое монолитная архитектура?',
+        answer: 'Монолитная архитектура — это подход, где всё приложение разработано как единый неделимый модуль. Все компоненты работают в одном процессе. Проще разрабатывать, но сложнее масштабировать.'
+      },
+      {
+        question: 'Что такое микросервисная архитектура?',
+        answer: 'Микросервисная архитектура — приложение разделено на независимые сервисы, каждый отвечает за свою функцию. Сервисы взаимодействуют через API. Легче масштабировать и поддерживать, но сложнее в разработке.'
+      },
+      {
+        question: 'Что такое слоистая архитектура?',
+        answer: 'Слоистая архитектура делит систему на горизонтальные слои: Presentation (UI), Business Logic, Data Access. Каждый слой взаимодействует только с соседними слоями, что обеспечивает разделение ответственности.'
+      },
+      {
+        question: 'Что такое SOLID принципы?',
+        answer: 'SOLID — пять принципов ООП: Single Responsibility (единственная ответственность), Open/Closed (открыт для расширения, закрыт для изменения), Liskov Substitution (подстановка Лисков), Interface Segregation (разделение интерфейсов), Dependency Inversion (инверсия зависимостей).'
+      }
+    ]
+  },
+  {
+    id: 'requirements',
+    title: 'Требования к ПО',
+    icon: 'FileText',
+    description: 'Сбор и управление требованиями',
+    questions: [
+      {
+        question: 'Что такое требования к ПО?',
+        answer: 'Требования — это описание того, что должна делать система и какими свойствами обладать. Делятся на функциональные (что система делает) и нефункциональные (как система это делает).'
+      },
+      {
+        question: 'Что такое User Story?',
+        answer: 'User Story — краткое описание функциональности с точки зрения пользователя. Формат: "Как [роль] я хочу [действие], чтобы [результат]". Например: "Как покупатель я хочу добавить товар в корзину, чтобы купить его позже".'
+      },
+      {
+        question: 'Что такое MVP?',
+        answer: 'MVP (Minimum Viable Product) — минимально жизнеспособный продукт с базовой функциональностью для проверки гипотез. Позволяет получить обратную связь от пользователей на ранних этапах с минимальными затратами.'
+      },
+      {
+        question: 'Что такое нефункциональные требования?',
+        answer: 'Нефункциональные требования описывают качественные характеристики системы: производительность, безопасность, надежность, масштабируемость, удобство использования. Например: "Система должна обрабатывать 1000 запросов в секунду".'
       }
     ]
   }
 ];
 
-const quizQuestions: Quiz[] = [
+const quizzes: Quiz[] = [
   {
     id: 1,
-    question: 'Какая модель SDLC лучше подходит для проектов с часто меняющимися требованиями?',
-    options: ['Waterfall', 'Agile', 'V-Model', 'Spiral'],
-    correct: 1
+    question: 'Какая модель разработки предполагает последовательное прохождение всех этапов?',
+    options: ['Agile', 'Waterfall', 'Scrum', 'Kanban'],
+    correct: 1,
+    topic: 'sdlc'
   },
   {
     id: 2,
-    question: 'К какому типу паттернов относится Singleton?',
-    options: ['Поведенческие', 'Структурные', 'Порождающие', 'Архитектурные'],
-    correct: 2
+    question: 'Что такое спринт в Agile?',
+    options: [
+      'Быстрое выполнение задачи',
+      'Короткий цикл разработки (1-4 недели)',
+      'Встреча команды',
+      'Финальный этап проекта'
+    ],
+    correct: 1,
+    topic: 'sdlc'
   },
   {
     id: 3,
-    question: 'Что проверяет Unit-тестирование?',
-    options: ['Всю систему целиком', 'Отдельные компоненты', 'Взаимодействие с пользователем', 'Производительность'],
-    correct: 1
+    question: 'Какой паттерн гарантирует существование только одного экземпляра класса?',
+    options: ['Factory', 'Observer', 'Singleton', 'Strategy'],
+    correct: 2,
+    topic: 'design-patterns'
   },
   {
     id: 4,
-    question: 'Что означает команда git merge?',
-    options: ['Создание новой ветки', 'Слияние веток', 'Удаление изменений', 'Отправка на сервер'],
-    correct: 1
+    question: 'К какому типу относится паттерн Observer?',
+    options: ['Порождающий', 'Структурный', 'Поведенческий', 'Архитектурный'],
+    correct: 2,
+    topic: 'design-patterns'
   },
   {
     id: 5,
-    question: 'В каком порядке выполняется цикл TDD?',
-    options: ['Код → Тест → Рефакторинг', 'Тест → Код → Рефакторинг', 'Рефакторинг → Тест → Код', 'Код → Рефакторинг → Тест'],
-    correct: 1
+    question: 'Что означает TDD?',
+    options: [
+      'Test Deployment Development',
+      'Total Development Design',
+      'Test-Driven Development',
+      'Technical Documentation Design'
+    ],
+    correct: 2,
+    topic: 'testing'
+  },
+  {
+    id: 6,
+    question: 'Какой тип тестирования проверяет взаимодействие между компонентами?',
+    options: ['Модульное', 'Интеграционное', 'Системное', 'Приемочное'],
+    correct: 1,
+    topic: 'testing'
+  },
+  {
+    id: 7,
+    question: 'Что делает команда git commit?',
+    options: [
+      'Отправляет изменения на сервер',
+      'Фиксирует изменения локально',
+      'Создает новую ветку',
+      'Получает изменения с сервера'
+    ],
+    correct: 1,
+    topic: 'version-control'
+  },
+  {
+    id: 8,
+    question: 'Что такое Pull Request?',
+    options: [
+      'Получение изменений с сервера',
+      'Запрос на слияние изменений',
+      'Отправка изменений',
+      'Создание ветки'
+    ],
+    correct: 1,
+    topic: 'version-control'
+  },
+  {
+    id: 9,
+    question: 'Какая архитектура делит приложение на независимые сервисы?',
+    options: ['Монолитная', 'Слоистая', 'Микросервисная', 'Клиент-серверная'],
+    correct: 2,
+    topic: 'architecture'
+  },
+  {
+    id: 10,
+    question: 'Что означает буква "S" в SOLID?',
+    options: [
+      'Simple Responsibility',
+      'Single Responsibility',
+      'System Responsibility',
+      'Stable Responsibility'
+    ],
+    correct: 1,
+    topic: 'architecture'
   }
 ];
 
 export default function Index() {
   const [currentView, setCurrentView] = useState<ViewType>('home');
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState('');
-  const [quizProgress, setQuizProgress] = useState(0);
-  const [currentQuizIndex, setCurrentQuizIndex] = useState(0);
-  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
-  const [showResult, setShowResult] = useState(false);
-  const [score, setScore] = useState(0);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [searchResults, setSearchResults] = useState<Topic[]>([]);
   const [userName, setUserName] = useState('Студент');
   const [userEmail, setUserEmail] = useState('student@se.guide');
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [testHistory, setTestHistory] = useState<TestHistory[]>([
+    { date: '2024-10-20', topic: 'Жизненный цикл разработки ПО', score: 8, total: 10 },
+    { date: '2024-10-15', topic: 'Паттерны проектирования', score: 7, total: 10 },
+    { date: '2024-10-10', topic: 'Тестирование ПО', score: 9, total: 10 }
+  ]);
 
-  const handleQuizAnswer = (answerIndex: number) => {
-    setSelectedAnswer(answerIndex);
-    setShowResult(true);
+  const [currentQuiz, setCurrentQuiz] = useState<Quiz[]>([]);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [selectedAnswers, setSelectedAnswers] = useState<number[]>([]);
+  const [quizCompleted, setQuizCompleted] = useState(false);
+  const [selectedTopic, setSelectedTopic] = useState<string>('all');
+
+  const handleSearch = () => {
+    if (!searchQuery.trim()) return;
+
+    const query = searchQuery.toLowerCase();
+    const results = topics.filter(topic =>
+      topic.title.toLowerCase().includes(query) ||
+      topic.description.toLowerCase().includes(query) ||
+      topic.questions.some(q =>
+        q.question.toLowerCase().includes(query) ||
+        q.answer.toLowerCase().includes(query)
+      )
+    ).map(topic => ({
+      ...topic,
+      questions: topic.questions.filter(q =>
+        q.question.toLowerCase().includes(query) ||
+        q.answer.toLowerCase().includes(query)
+      )
+    }));
+
+    setSearchResults(results);
+    setCurrentView('search-results');
+  };
+
+  const startQuiz = (topicId: string = 'all') => {
+    setSelectedTopic(topicId);
+    let filteredQuizzes = quizzes;
     
-    if (answerIndex === quizQuestions[currentQuizIndex].correct) {
-      setScore(score + 1);
+    if (topicId !== 'all') {
+      filteredQuizzes = quizzes.filter(q => q.topic === topicId);
     }
 
-    setTimeout(() => {
-      if (currentQuizIndex < quizQuestions.length - 1) {
-        setCurrentQuizIndex(currentQuizIndex + 1);
-        setSelectedAnswer(null);
-        setShowResult(false);
-        setQuizProgress(((currentQuizIndex + 1) / quizQuestions.length) * 100);
-      } else {
-        setQuizProgress(100);
-      }
-    }, 1500);
+    const shuffled = [...filteredQuizzes].sort(() => Math.random() - 0.5).slice(0, 10);
+    setCurrentQuiz(shuffled);
+    setSelectedAnswers([]);
+    setCurrentQuestionIndex(0);
+    setQuizCompleted(false);
+    setCurrentView('quiz-active');
+  };
+
+  const handleAnswerSelect = (answerIndex: number) => {
+    const newAnswers = [...selectedAnswers];
+    newAnswers[currentQuestionIndex] = answerIndex;
+    setSelectedAnswers(newAnswers);
+  };
+
+  const nextQuestion = () => {
+    if (currentQuestionIndex < currentQuiz.length - 1) {
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
+    } else {
+      finishQuiz();
+    }
+  };
+
+  const previousQuestion = () => {
+    if (currentQuestionIndex > 0) {
+      setCurrentQuestionIndex(currentQuestionIndex - 1);
+    }
+  };
+
+  const finishQuiz = () => {
+    const score = selectedAnswers.filter((answer, idx) => answer === currentQuiz[idx].correct).length;
+    const newHistory: TestHistory = {
+      date: new Date().toISOString().split('T')[0],
+      topic: selectedTopic === 'all' ? 'Общая диагностика' : topics.find(t => t.id === selectedTopic)?.title || 'Тест',
+      score,
+      total: currentQuiz.length
+    };
+    setTestHistory([newHistory, ...testHistory]);
+    setQuizCompleted(true);
   };
 
   const resetQuiz = () => {
-    setCurrentQuizIndex(0);
-    setSelectedAnswer(null);
-    setShowResult(false);
-    setScore(0);
-    setQuizProgress(0);
+    setCurrentView('diagnostics');
   };
 
-  const filteredTopics = topics.map(topic => ({
-    ...topic,
-    questions: topic.questions.filter(q => 
-      q.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      q.answer.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-  })).filter(topic => topic.questions.length > 0);
+  const calculateTotalProgress = () => {
+    if (testHistory.length === 0) return 0;
+    const totalScore = testHistory.reduce((sum, test) => sum + test.score, 0);
+    const totalQuestions = testHistory.reduce((sum, test) => sum + test.total, 0);
+    return Math.round((totalScore / totalQuestions) * 100);
+  };
 
   return (
-    <div className="flex h-screen bg-background text-foreground">
-      <aside className="w-64 border-r border-sidebar-border bg-sidebar p-4 flex flex-col">
-        <div className="flex items-center gap-3 mb-8 px-2">
-          <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
-            <Icon name="GraduationCap" className="text-primary" size={24} />
-          </div>
-          <div>
-            <h1 className="font-semibold text-lg">SE Guide</h1>
-            <p className="text-xs text-muted-foreground">Программная инженерия</p>
+    <div className="flex h-screen bg-background">
+      <aside className="w-64 border-r border-sidebar-border bg-sidebar flex flex-col p-4">
+        <div className="mb-8">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+              <Icon name="GraduationCap" className="text-primary-foreground" size={24} />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-sidebar-foreground">SE Guide</h1>
+              <p className="text-xs text-muted-foreground">Программная инженерия</p>
+            </div>
           </div>
         </div>
 
@@ -216,13 +433,13 @@ export default function Index() {
           </button>
 
           <button
-            onClick={() => setCurrentView('profile')}
+            onClick={() => setCurrentView('topics')}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-              currentView === 'profile' ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'hover:bg-sidebar-accent/50'
+              currentView === 'topics' ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'hover:bg-sidebar-accent/50'
             }`}
           >
-            <Icon name="User" size={20} />
-            <span className="font-medium">Профиль</span>
+            <Icon name="BookOpen" size={20} />
+            <span className="font-medium">База знаний</span>
           </button>
 
           <button
@@ -232,17 +449,17 @@ export default function Index() {
             }`}
           >
             <Icon name="Brain" size={20} />
-            <span className="font-medium">Диагностика знаний</span>
+            <span className="font-medium">Диагностика</span>
           </button>
 
           <button
-            onClick={() => setCurrentView('topics')}
+            onClick={() => setCurrentView('profile')}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-              currentView === 'topics' ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'hover:bg-sidebar-accent/50'
+              currentView === 'profile' ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'hover:bg-sidebar-accent/50'
             }`}
           >
-            <Icon name="BookOpen" size={20} />
-            <span className="font-medium">База знаний</span>
+            <Icon name="User" size={20} />
+            <span className="font-medium">Профиль</span>
           </button>
         </nav>
 
@@ -253,7 +470,7 @@ export default function Index() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">{userName}</p>
-              <p className="text-xs text-muted-foreground">{userEmail}</p>
+              <p className="text-xs text-muted-foreground truncate">{userEmail}</p>
             </div>
           </div>
         </div>
@@ -261,210 +478,132 @@ export default function Index() {
 
       <main className="flex-1 overflow-hidden">
         <ScrollArea className="h-full">
-          <div className="max-w-4xl mx-auto p-8">
+          <div className="max-w-5xl mx-auto p-8">
             {currentView === 'home' && (
               <div className="animate-fade-in space-y-8">
-                <div className="text-center py-16">
+                <div className="text-center py-12">
                   <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 mb-6 animate-scale-in">
-                    <Icon name="Sparkles" className="text-primary" size={40} />
+                    <Icon name="GraduationCap" className="text-primary" size={40} />
                   </div>
-                  <h2 className="text-4xl font-bold mb-3">Что вы хотите узнать?</h2>
-                  <p className="text-muted-foreground mb-10 text-lg">Найдите ответы на вопросы по программной инженерии</p>
-                  
-                  <div className="relative max-w-2xl mx-auto">
+                  <h1 className="text-4xl font-bold mb-3">Справочник по программной инженерии</h1>
+                  <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+                    Изучайте основы разработки ПО и проверяйте свои знания
+                  </p>
+                </div>
+
+                <div className="max-w-2xl mx-auto">
+                  <div className="relative">
                     <Input
+                      placeholder="Найти тему или вопрос..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && searchQuery.trim()) {
-                          setSearchResults(searchQuery);
-                          setCurrentView('search-results');
-                        }
-                      }}
-                      placeholder="Введите ваш вопрос..."
-                      className="h-16 pl-14 pr-14 text-lg bg-card border-2 border-border hover:border-primary/50 focus:border-primary transition-colors rounded-2xl shadow-lg"
+                      onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                      className="h-14 pl-12 pr-24 text-lg bg-card border-2"
                     />
-                    <Icon name="Search" className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground" size={22} />
-                    {searchQuery && (
-                      <Button
-                        size="sm"
-                        onClick={() => {
-                          setSearchResults(searchQuery);
-                          setCurrentView('search-results');
-                        }}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-xl"
-                      >
-                        Найти
-                      </Button>
-                    )}
-                  </div>
-                  
-                  <div className="mt-8 flex flex-wrap justify-center gap-2">
-                    <Badge variant="outline" className="cursor-pointer hover:bg-primary/10 transition-colors"
-                      onClick={() => { setSearchQuery('Что такое SDLC?'); }}>
-                      Что такое SDLC?
-                    </Badge>
-                    <Badge variant="outline" className="cursor-pointer hover:bg-primary/10 transition-colors"
-                      onClick={() => { setSearchQuery('Паттерны проектирования'); }}>
-                      Паттерны проектирования
-                    </Badge>
-                    <Badge variant="outline" className="cursor-pointer hover:bg-primary/10 transition-colors"
-                      onClick={() => { setSearchQuery('Методы тестирования'); }}>
-                      Методы тестирования
-                    </Badge>
-                  </div>
-                </div>
-
-                {false && searchQuery ? (
-                  <div className="space-y-6">
-                    <h3 className="text-xl font-semibold">Результаты поиска</h3>
-                    {filteredTopics.length > 0 ? (
-                      filteredTopics.map(topic => (
-                        <Card key={topic.id} className="animate-scale-in">
-                          <CardHeader>
-                            <div className="flex items-center gap-3">
-                              <Icon name={topic.icon as any} className="text-primary" size={24} />
-                              <CardTitle>{topic.title}</CardTitle>
-                            </div>
-                          </CardHeader>
-                          <CardContent>
-                            <Accordion type="single" collapsible className="space-y-2">
-                              {topic.questions.map((q, idx) => (
-                                <AccordionItem key={idx} value={`${topic.id}-${idx}`} className="border border-border rounded-lg px-4">
-                                  <AccordionTrigger className="hover:no-underline">
-                                    {q.question}
-                                  </AccordionTrigger>
-                                  <AccordionContent className="text-muted-foreground">
-                                    {q.answer}
-                                  </AccordionContent>
-                                </AccordionItem>
-                              ))}
-                            </Accordion>
-                          </CardContent>
-                        </Card>
-                      ))
-                    ) : (
-                      <Card>
-                        <CardContent className="py-12 text-center">
-                          <Icon name="SearchX" className="mx-auto mb-4 text-muted-foreground" size={48} />
-                          <p className="text-muted-foreground">По вашему запросу ничего не найдено</p>
-                        </CardContent>
-                      </Card>
-                    )}
-                  </div>
-                ) : null}
-              </div>
-            )}
-
-            {currentView === 'profile' && (
-              <div className="animate-fade-in space-y-6">
-                <div className="flex items-center justify-between mb-8">
-                  <h2 className="text-3xl font-bold">Профиль</h2>
-                  {!isEditingProfile && (
-                    <Button variant="outline" onClick={() => setIsEditingProfile(true)}>
-                      <Icon name="Pencil" size={16} className="mr-2" />
-                      Редактировать
+                    <Icon name="Search" className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={20} />
+                    <Button 
+                      onClick={handleSearch}
+                      className="absolute right-2 top-1/2 -translate-y-1/2"
+                      size="sm"
+                    >
+                      Найти
                     </Button>
-                  )}
+                  </div>
+                  <div className="flex flex-wrap gap-2 mt-4 justify-center">
+                    <Badge 
+                      variant="secondary" 
+                      className="cursor-pointer hover:bg-primary hover:text-primary-foreground"
+                      onClick={() => { setSearchQuery('Agile'); handleSearch(); }}
+                    >
+                      Agile
+                    </Badge>
+                    <Badge 
+                      variant="secondary"
+                      className="cursor-pointer hover:bg-primary hover:text-primary-foreground"
+                      onClick={() => { setSearchQuery('Паттерны'); handleSearch(); }}
+                    >
+                      Паттерны
+                    </Badge>
+                    <Badge 
+                      variant="secondary"
+                      className="cursor-pointer hover:bg-primary hover:text-primary-foreground"
+                      onClick={() => { setSearchQuery('Тестирование'); handleSearch(); }}
+                    >
+                      Тестирование
+                    </Badge>
+                    <Badge 
+                      variant="secondary"
+                      className="cursor-pointer hover:bg-primary hover:text-primary-foreground"
+                      onClick={() => { setSearchQuery('Git'); handleSearch(); }}
+                    >
+                      Git
+                    </Badge>
+                  </div>
                 </div>
-                
-                <Card>
-                  <CardHeader>
-                    <div className="flex items-center gap-4">
-                      <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center">
-                        <Icon name="User" size={32} className="text-primary" />
-                      </div>
-                      <div className="flex-1">
-                        {isEditingProfile ? (
-                          <div className="space-y-2">
-                            <Input
-                              value={userName}
-                              onChange={(e) => setUserName(e.target.value)}
-                              placeholder="Имя"
-                              className="font-semibold"
-                            />
-                            <Input
-                              value={userEmail}
-                              onChange={(e) => setUserEmail(e.target.value)}
-                              placeholder="Email"
-                              type="email"
-                            />
-                          </div>
-                        ) : (
-                          <div>
-                            <CardTitle>{userName}</CardTitle>
-                            <CardDescription>{userEmail}</CardDescription>
-                          </div>
-                        )}
-                      </div>
-                      {isEditingProfile && (
-                        <div className="flex gap-2">
-                          <Button size="sm" onClick={() => setIsEditingProfile(false)}>
-                            <Icon name="Check" size={16} className="mr-1" />
-                            Сохранить
-                          </Button>
-                          <Button size="sm" variant="outline" onClick={() => setIsEditingProfile(false)}>
-                            Отмена
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  </CardHeader>
-                </Card>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Статистика обучения</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div>
-                      <div className="flex justify-between mb-2">
-                        <span className="text-sm font-medium">Пройдено тем</span>
-                        <span className="text-sm text-muted-foreground">3 из 4</span>
+                <div className="grid md:grid-cols-2 gap-6 mt-12">
+                  <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setCurrentView('topics')}>
+                    <CardHeader>
+                      <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-3">
+                        <Icon name="BookOpen" className="text-primary" size={24} />
                       </div>
-                      <Progress value={75} className="h-2" />
-                    </div>
-                    
-                    <div className="text-center p-4 rounded-lg bg-card border border-border">
-                      <div className="text-2xl font-bold text-primary">85%</div>
-                      <div className="text-xs text-muted-foreground mt-1">Точность тестов</div>
-                    </div>
-                  </CardContent>
-                </Card>
+                      <CardTitle>База знаний</CardTitle>
+                      <CardDescription>
+                        {topics.length} тем с подробными ответами на часто задаваемые вопросы
+                      </CardDescription>
+                    </CardHeader>
+                  </Card>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle>История прохождения тестов</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                            <Icon name="CheckCircle2" className="text-primary" size={20} />
+                  <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setCurrentView('diagnostics')}>
+                    <CardHeader>
+                      <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-3">
+                        <Icon name="Brain" className="text-primary" size={24} />
+                      </div>
+                      <CardTitle>Диагностика знаний</CardTitle>
+                      <CardDescription>
+                        Тесты для проверки понимания основ программной инженерии
+                      </CardDescription>
+                    </CardHeader>
+                  </Card>
+                </div>
+
+                {testHistory.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Icon name="TrendingUp" size={20} />
+                        Ваш прогресс
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div>
+                          <div className="flex justify-between mb-2">
+                            <span className="text-sm font-medium">Общий результат</span>
+                            <span className="text-sm font-medium">{calculateTotalProgress()}%</span>
                           </div>
-                          <div>
-                            <p className="font-medium text-sm">Общий тест по SE</p>
-                            <p className="text-xs text-muted-foreground">2 дня назад</p>
+                          <Progress value={calculateTotalProgress()} />
+                        </div>
+                        <div className="grid grid-cols-3 gap-4 pt-4">
+                          <div className="text-center">
+                            <div className="text-2xl font-bold text-primary">{testHistory.length}</div>
+                            <div className="text-xs text-muted-foreground">Тестов пройдено</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-2xl font-bold text-primary">
+                              {testHistory.reduce((sum, t) => sum + t.score, 0)}
+                            </div>
+                            <div className="text-xs text-muted-foreground">Правильных ответов</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-2xl font-bold text-primary">{calculateTotalProgress()}%</div>
+                            <div className="text-xs text-muted-foreground">Средний балл</div>
                           </div>
                         </div>
-                        <Badge variant="secondary">85%</Badge>
                       </div>
-                      <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                            <Icon name="CheckCircle2" className="text-primary" size={20} />
-                          </div>
-                          <div>
-                            <p className="font-medium text-sm">SDLC модели</p>
-                            <p className="text-xs text-muted-foreground">5 дней назад</p>
-                          </div>
-                        </div>
-                        <Badge variant="secondary">90%</Badge>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
             )}
 
@@ -472,46 +611,331 @@ export default function Index() {
               <div className="animate-fade-in space-y-6">
                 <div className="mb-8">
                   <h2 className="text-3xl font-bold mb-2">База знаний</h2>
-                  <p className="text-muted-foreground">Структурированный каталог материалов по программной инженерии</p>
+                  <p className="text-muted-foreground">Структурированная информация по программной инженерии</p>
                 </div>
-                
-                <div className="relative max-w-xl mb-6">
-                  <Input
-                    placeholder="Фильтр по темам..."
-                    className="pl-10 bg-card"
-                  />
-                  <Icon name="Filter" className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+
+                <div className="grid gap-6">
+                  {topics.map((topic) => (
+                    <Card key={topic.id} className="animate-scale-in hover:shadow-lg transition-shadow">
+                      <CardHeader>
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                              <Icon name={topic.icon as any} className="text-primary" size={24} />
+                            </div>
+                            <div>
+                              <CardTitle>{topic.title}</CardTitle>
+                              <CardDescription>{topic.description}</CardDescription>
+                            </div>
+                          </div>
+                          <Badge variant="secondary">{topic.questions.length} вопросов</Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <Accordion type="single" collapsible className="space-y-2">
+                          {topic.questions.map((q, idx) => (
+                            <AccordionItem key={idx} value={`${topic.id}-${idx}`} className="border border-border rounded-lg px-4">
+                              <AccordionTrigger className="hover:no-underline text-left">
+                                <span className="flex items-start gap-2">
+                                  <span className="text-primary font-semibold min-w-[24px]">{idx + 1}.</span>
+                                  <span>{q.question}</span>
+                                </span>
+                              </AccordionTrigger>
+                              <AccordionContent className="text-muted-foreground pt-2">
+                                {q.answer}
+                              </AccordionContent>
+                            </AccordionItem>
+                          ))}
+                        </Accordion>
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
-                
-                {topics.map(topic => (
-                  <Card key={topic.id}>
-                    <CardHeader>
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                          <Icon name={topic.icon as any} className="text-primary" size={24} />
+              </div>
+            )}
+
+            {currentView === 'diagnostics' && (
+              <div className="animate-fade-in space-y-6">
+                <div className="mb-8">
+                  <h2 className="text-3xl font-bold mb-2">Диагностика знаний</h2>
+                  <p className="text-muted-foreground">Выберите тему для тестирования или пройдите общий тест</p>
+                </div>
+
+                <Card className="mb-6">
+                  <CardHeader>
+                    <CardTitle>Общий тест</CardTitle>
+                    <CardDescription>10 случайных вопросов из всех тем</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Button onClick={() => startQuiz('all')} size="lg" className="w-full">
+                      <Icon name="PlayCircle" className="mr-2" size={20} />
+                      Начать тест
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                <div className="grid md:grid-cols-2 gap-6">
+                  {topics.map((topic) => {
+                    const topicQuizCount = quizzes.filter(q => q.topic === topic.id).length;
+                    return (
+                      <Card key={topic.id} className="hover:shadow-lg transition-shadow">
+                        <CardHeader>
+                          <div className="flex items-center gap-3 mb-2">
+                            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                              <Icon name={topic.icon as any} className="text-primary" size={20} />
+                            </div>
+                            <div>
+                              <CardTitle className="text-lg">{topic.title}</CardTitle>
+                            </div>
+                          </div>
+                          <CardDescription>{topic.description}</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-muted-foreground">{topicQuizCount} вопросов</span>
+                            <Button onClick={() => startQuiz(topic.id)} variant="secondary">
+                              <Icon name="PlayCircle" className="mr-2" size={16} />
+                              Начать
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {currentView === 'quiz-active' && !quizCompleted && (
+              <div className="animate-fade-in space-y-6 max-w-3xl mx-auto">
+                <div className="flex items-center justify-between mb-6">
+                  <Button variant="ghost" onClick={() => setCurrentView('diagnostics')}>
+                    <Icon name="ArrowLeft" className="mr-2" size={16} />
+                    Вернуться
+                  </Button>
+                  <Badge variant="secondary">
+                    Вопрос {currentQuestionIndex + 1} из {currentQuiz.length}
+                  </Badge>
+                </div>
+
+                <Progress value={((currentQuestionIndex + 1) / currentQuiz.length) * 100} className="mb-6" />
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-xl">{currentQuiz[currentQuestionIndex].question}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <RadioGroup
+                      value={selectedAnswers[currentQuestionIndex]?.toString()}
+                      onValueChange={(value) => handleAnswerSelect(parseInt(value))}
+                    >
+                      {currentQuiz[currentQuestionIndex].options.map((option, idx) => (
+                        <div key={idx} className="flex items-center space-x-3 p-4 rounded-lg border border-border hover:bg-accent cursor-pointer">
+                          <RadioGroupItem value={idx.toString()} id={`option-${idx}`} />
+                          <Label htmlFor={`option-${idx}`} className="flex-1 cursor-pointer">
+                            {option}
+                          </Label>
+                        </div>
+                      ))}
+                    </RadioGroup>
+                  </CardContent>
+                </Card>
+
+                <div className="flex justify-between gap-4">
+                  <Button
+                    variant="outline"
+                    onClick={previousQuestion}
+                    disabled={currentQuestionIndex === 0}
+                  >
+                    <Icon name="ChevronLeft" className="mr-2" size={16} />
+                    Назад
+                  </Button>
+                  <Button
+                    onClick={nextQuestion}
+                    disabled={selectedAnswers[currentQuestionIndex] === undefined}
+                  >
+                    {currentQuestionIndex === currentQuiz.length - 1 ? 'Завершить' : 'Далее'}
+                    <Icon name="ChevronRight" className="ml-2" size={16} />
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {currentView === 'quiz-active' && quizCompleted && (
+              <div className="animate-fade-in space-y-6 max-w-3xl mx-auto">
+                <Card>
+                  <CardHeader className="text-center pb-4">
+                    <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                      <Icon name="Trophy" className="text-primary" size={40} />
+                    </div>
+                    <CardTitle className="text-3xl">Тест завершен!</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="text-center">
+                      <div className="text-5xl font-bold text-primary mb-2">
+                        {selectedAnswers.filter((answer, idx) => answer === currentQuiz[idx].correct).length} / {currentQuiz.length}
+                      </div>
+                      <p className="text-muted-foreground">правильных ответов</p>
+                    </div>
+
+                    <Progress 
+                      value={(selectedAnswers.filter((answer, idx) => answer === currentQuiz[idx].correct).length / currentQuiz.length) * 100} 
+                      className="h-4"
+                    />
+
+                    <div className="space-y-4 pt-4">
+                      <h3 className="font-semibold text-lg">Разбор ответов:</h3>
+                      {currentQuiz.map((quiz, idx) => {
+                        const isCorrect = selectedAnswers[idx] === quiz.correct;
+                        return (
+                          <div key={quiz.id} className={`p-4 rounded-lg border-2 ${isCorrect ? 'border-green-500 bg-green-500/10' : 'border-red-500 bg-red-500/10'}`}>
+                            <div className="flex items-start gap-3">
+                              <Icon 
+                                name={isCorrect ? 'CheckCircle2' : 'XCircle'} 
+                                className={isCorrect ? 'text-green-600' : 'text-red-600'}
+                                size={20}
+                              />
+                              <div className="flex-1">
+                                <p className="font-medium mb-2">{quiz.question}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  Ваш ответ: <span className={isCorrect ? 'text-green-600' : 'text-red-600'}>
+                                    {quiz.options[selectedAnswers[idx]]}
+                                  </span>
+                                </p>
+                                {!isCorrect && (
+                                  <p className="text-sm text-green-600 mt-1">
+                                    Правильный ответ: {quiz.options[quiz.correct]}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <Button onClick={resetQuiz} className="w-full" size="lg">
+                      <Icon name="RotateCcw" className="mr-2" size={20} />
+                      Пройти другой тест
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {currentView === 'profile' && (
+              <div className="animate-fade-in space-y-6">
+                <h2 className="text-3xl font-bold mb-8">Профиль</h2>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Личная информация</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {isEditingProfile ? (
+                      <div className="space-y-4">
+                        <div>
+                          <Label htmlFor="name">Имя</Label>
+                          <Input
+                            id="name"
+                            value={userName}
+                            onChange={(e) => setUserName(e.target.value)}
+                            className="mt-1"
+                          />
                         </div>
                         <div>
-                          <CardTitle>{topic.title}</CardTitle>
-                          <CardDescription>{topic.questions.length} вопросов</CardDescription>
+                          <Label htmlFor="email">Email</Label>
+                          <Input
+                            id="email"
+                            type="email"
+                            value={userEmail}
+                            onChange={(e) => setUserEmail(e.target.value)}
+                            className="mt-1"
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <Button onClick={() => setIsEditingProfile(false)}>
+                            <Icon name="Save" className="mr-2" size={16} />
+                            Сохранить
+                          </Button>
+                          <Button variant="outline" onClick={() => setIsEditingProfile(false)}>
+                            Отмена
+                          </Button>
                         </div>
                       </div>
-                    </CardHeader>
-                    <CardContent>
-                      <Accordion type="single" collapsible className="space-y-2">
-                        {topic.questions.map((q, idx) => (
-                          <AccordionItem key={idx} value={`${topic.id}-${idx}`} className="border border-border rounded-lg px-4">
-                            <AccordionTrigger className="hover:no-underline">
-                              {q.question}
-                            </AccordionTrigger>
-                            <AccordionContent className="text-muted-foreground">
-                              {q.answer}
-                            </AccordionContent>
-                          </AccordionItem>
-                        ))}
-                      </Accordion>
-                    </CardContent>
-                  </Card>
-                ))}
+                    ) : (
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-4">
+                          <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center">
+                            <Icon name="User" size={32} className="text-primary" />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-lg">{userName}</p>
+                            <p className="text-muted-foreground">{userEmail}</p>
+                          </div>
+                        </div>
+                        <Button variant="outline" onClick={() => setIsEditingProfile(true)}>
+                          <Icon name="Edit" className="mr-2" size={16} />
+                          Редактировать
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Статистика</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-3 gap-6">
+                      <div className="text-center p-4 rounded-lg bg-accent">
+                        <div className="text-3xl font-bold text-primary mb-1">{testHistory.length}</div>
+                        <div className="text-sm text-muted-foreground">Тестов пройдено</div>
+                      </div>
+                      <div className="text-center p-4 rounded-lg bg-accent">
+                        <div className="text-3xl font-bold text-primary mb-1">
+                          {testHistory.reduce((sum, t) => sum + t.score, 0)}
+                        </div>
+                        <div className="text-sm text-muted-foreground">Правильных ответов</div>
+                      </div>
+                      <div className="text-center p-4 rounded-lg bg-accent">
+                        <div className="text-3xl font-bold text-primary mb-1">{calculateTotalProgress()}%</div>
+                        <div className="text-sm text-muted-foreground">Средний балл</div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>История тестов</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {testHistory.length === 0 ? (
+                        <p className="text-center text-muted-foreground py-8">Вы еще не проходили тесты</p>
+                      ) : (
+                        testHistory.map((test, idx) => (
+                          <div key={idx} className="flex items-center justify-between p-4 rounded-lg border border-border">
+                            <div className="flex-1">
+                              <p className="font-medium">{test.topic}</p>
+                              <p className="text-sm text-muted-foreground">{test.date}</p>
+                            </div>
+                            <div className="flex items-center gap-4">
+                              <Badge variant={test.score / test.total >= 0.7 ? 'default' : 'secondary'}>
+                                {test.score} / {test.total}
+                              </Badge>
+                              <div className="text-right">
+                                <div className="font-semibold">{Math.round((test.score / test.total) * 100)}%</div>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             )}
 
@@ -523,40 +947,42 @@ export default function Index() {
                   </Button>
                   <div>
                     <h2 className="text-3xl font-bold">Результаты поиска</h2>
-                    <p className="text-muted-foreground">Запрос: "{searchResults}"</p>
+                    <p className="text-muted-foreground">Запрос: "{searchQuery}"</p>
                   </div>
                 </div>
 
-                {filteredTopics.length > 0 ? (
-                  filteredTopics.map(topic => (
-                    <Card key={topic.id} className="animate-scale-in">
-                      <CardHeader>
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                            <Icon name={topic.icon as any} className="text-primary" size={24} />
+                {searchResults.length > 0 ? (
+                  <div className="space-y-6">
+                    {searchResults.map(topic => (
+                      <Card key={topic.id} className="animate-scale-in">
+                        <CardHeader>
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                              <Icon name={topic.icon as any} className="text-primary" size={24} />
+                            </div>
+                            <div>
+                              <CardTitle>{topic.title}</CardTitle>
+                              <CardDescription>{topic.questions.length} найдено</CardDescription>
+                            </div>
                           </div>
-                          <div>
-                            <CardTitle>{topic.title}</CardTitle>
-                            <CardDescription>{topic.questions.length} найдено</CardDescription>
-                          </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <Accordion type="single" collapsible className="space-y-2">
-                          {topic.questions.map((q, idx) => (
-                            <AccordionItem key={idx} value={`${topic.id}-${idx}`} className="border border-border rounded-lg px-4">
-                              <AccordionTrigger className="hover:no-underline">
-                                {q.question}
-                              </AccordionTrigger>
-                              <AccordionContent className="text-muted-foreground">
-                                {q.answer}
-                              </AccordionContent>
-                            </AccordionItem>
-                          ))}
-                        </Accordion>
-                      </CardContent>
-                    </Card>
-                  ))
+                        </CardHeader>
+                        <CardContent>
+                          <Accordion type="single" collapsible className="space-y-2">
+                            {topic.questions.map((q, idx) => (
+                              <AccordionItem key={idx} value={`${topic.id}-${idx}`} className="border border-border rounded-lg px-4">
+                                <AccordionTrigger className="hover:no-underline text-left">
+                                  {q.question}
+                                </AccordionTrigger>
+                                <AccordionContent className="text-muted-foreground">
+                                  {q.answer}
+                                </AccordionContent>
+                              </AccordionItem>
+                            ))}
+                          </Accordion>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
                 ) : (
                   <Card>
                     <CardContent className="py-16 text-center">
@@ -566,112 +992,6 @@ export default function Index() {
                       <Button onClick={() => setCurrentView('topics')}>
                         <Icon name="BookOpen" className="mr-2" size={18} />
                         Посмотреть все темы
-                      </Button>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-            )}
-
-            {currentView === 'diagnostics' && (
-              <div className="animate-fade-in space-y-6">
-                <h2 className="text-3xl font-bold mb-8">Диагностика знаний</h2>
-                
-                {quizProgress < 100 ? (
-                  <Card>
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <CardTitle>Тест по программной инженерии</CardTitle>
-                        <Badge variant="secondary">
-                          {currentQuizIndex + 1} / {quizQuestions.length}
-                        </Badge>
-                      </div>
-                      <Progress value={(currentQuizIndex / quizQuestions.length) * 100} className="mt-4" />
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                      <div>
-                        <h3 className="text-xl font-semibold mb-6">
-                          {quizQuestions[currentQuizIndex].question}
-                        </h3>
-                        
-                        <div className="space-y-3">
-                          {quizQuestions[currentQuizIndex].options.map((option, idx) => (
-                            <button
-                              key={idx}
-                              onClick={() => !showResult && handleQuizAnswer(idx)}
-                              disabled={showResult}
-                              className={`w-full p-4 text-left rounded-lg border-2 transition-all ${
-                                showResult
-                                  ? idx === quizQuestions[currentQuizIndex].correct
-                                    ? 'border-green-500 bg-green-500/10'
-                                    : idx === selectedAnswer
-                                    ? 'border-red-500 bg-red-500/10'
-                                    : 'border-border bg-card'
-                                  : selectedAnswer === idx
-                                  ? 'border-primary bg-primary/10'
-                                  : 'border-border bg-card hover:border-primary/50'
-                              }`}
-                            >
-                              <div className="flex items-center gap-3">
-                                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                                  showResult && idx === quizQuestions[currentQuizIndex].correct
-                                    ? 'border-green-500 bg-green-500'
-                                    : showResult && idx === selectedAnswer
-                                    ? 'border-red-500 bg-red-500'
-                                    : 'border-current'
-                                }`}>
-                                  {showResult && idx === quizQuestions[currentQuizIndex].correct && (
-                                    <Icon name="Check" size={16} className="text-white" />
-                                  )}
-                                  {showResult && idx === selectedAnswer && idx !== quizQuestions[currentQuizIndex].correct && (
-                                    <Icon name="X" size={16} className="text-white" />
-                                  )}
-                                </div>
-                                <span className="font-medium">{option}</span>
-                              </div>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <Card className="animate-scale-in">
-                    <CardHeader className="text-center">
-                      <div className="w-20 h-20 mx-auto rounded-full bg-primary/20 flex items-center justify-center mb-4">
-                        <Icon name="Trophy" className="text-primary" size={40} />
-                      </div>
-                      <CardTitle className="text-2xl">Тест завершен!</CardTitle>
-                      <CardDescription>Вы ответили правильно на {score} из {quizQuestions.length} вопросов</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                      <div>
-                        <div className="text-center mb-2">
-                          <span className="text-4xl font-bold text-primary">
-                            {Math.round((score / quizQuestions.length) * 100)}%
-                          </span>
-                        </div>
-                        <Progress value={(score / quizQuestions.length) * 100} className="h-3" />
-                      </div>
-                      
-                      <div className="grid grid-cols-3 gap-4">
-                        <div className="text-center p-4 rounded-lg bg-card border border-border">
-                          <div className="text-2xl font-bold text-green-500">{score}</div>
-                          <div className="text-xs text-muted-foreground mt-1">Правильных</div>
-                        </div>
-                        <div className="text-center p-4 rounded-lg bg-card border border-border">
-                          <div className="text-2xl font-bold text-red-500">{quizQuestions.length - score}</div>
-                          <div className="text-xs text-muted-foreground mt-1">Неправильных</div>
-                        </div>
-                        <div className="text-center p-4 rounded-lg bg-card border border-border">
-                          <div className="text-2xl font-bold text-primary">{quizQuestions.length}</div>
-                          <div className="text-xs text-muted-foreground mt-1">Всего</div>
-                        </div>
-                      </div>
-
-                      <Button onClick={resetQuiz} className="w-full" size="lg">
-                        <Icon name="RotateCcw" className="mr-2" size={20} />
-                        Пройти снова
                       </Button>
                     </CardContent>
                   </Card>
