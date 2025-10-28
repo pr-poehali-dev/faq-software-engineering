@@ -371,53 +371,9 @@ export default function Index() {
                       <Progress value={75} className="h-2" />
                     </div>
                     
-                    <div className="grid grid-cols-3 gap-4">
-                      <div className="text-center p-4 rounded-lg bg-card border border-border">
-                        <div className="text-2xl font-bold text-primary">24</div>
-                        <div className="text-xs text-muted-foreground mt-1">Изучено вопросов</div>
-                      </div>
-                      <div className="text-center p-4 rounded-lg bg-card border border-border">
-                        <div className="text-2xl font-bold text-primary">85%</div>
-                        <div className="text-xs text-muted-foreground mt-1">Точность тестов</div>
-                      </div>
-                      <div className="text-center p-4 rounded-lg bg-card border border-border">
-                        <div className="text-2xl font-bold text-primary">12</div>
-                        <div className="text-xs text-muted-foreground mt-1">Дней подряд</div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Достижения</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-4 gap-4">
-                      <div className="text-center">
-                        <div className="w-16 h-16 mx-auto rounded-full bg-primary/20 flex items-center justify-center mb-2">
-                          <Icon name="Trophy" className="text-primary" size={24} />
-                        </div>
-                        <p className="text-xs font-medium">Первые шаги</p>
-                      </div>
-                      <div className="text-center">
-                        <div className="w-16 h-16 mx-auto rounded-full bg-primary/20 flex items-center justify-center mb-2">
-                          <Icon name="Target" className="text-primary" size={24} />
-                        </div>
-                        <p className="text-xs font-medium">Точный удар</p>
-                      </div>
-                      <div className="text-center opacity-40">
-                        <div className="w-16 h-16 mx-auto rounded-full bg-muted flex items-center justify-center mb-2">
-                          <Icon name="Star" className="text-muted-foreground" size={24} />
-                        </div>
-                        <p className="text-xs font-medium">Эксперт</p>
-                      </div>
-                      <div className="text-center opacity-40">
-                        <div className="w-16 h-16 mx-auto rounded-full bg-muted flex items-center justify-center mb-2">
-                          <Icon name="Flame" className="text-muted-foreground" size={24} />
-                        </div>
-                        <p className="text-xs font-medium">30 дней</p>
-                      </div>
+                    <div className="text-center p-4 rounded-lg bg-card border border-border">
+                      <div className="text-2xl font-bold text-primary">85%</div>
+                      <div className="text-xs text-muted-foreground mt-1">Точность тестов</div>
                     </div>
                   </CardContent>
                 </Card>
