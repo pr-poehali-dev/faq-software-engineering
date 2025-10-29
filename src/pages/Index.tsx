@@ -288,8 +288,7 @@ export default function Index() {
   const [searchResults, setSearchResults] = useState<Topic[]>([]);
   const [userName, setUserName] = useState('student123');
   const [userEmail, setUserEmail] = useState('');
-  const [userPassword, setUserPassword] = useState('');
-  const [userConfirmPassword, setUserConfirmPassword] = useState('');
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [testHistory, setTestHistory] = useState<TestHistory[]>([
     { date: '2024-10-20', topic: 'Жизненный цикл разработки ПО', score: 8, total: 10 },
     { date: '2024-10-15', topic: 'Паттерны проектирования', score: 7, total: 10 },
@@ -567,24 +566,52 @@ export default function Index() {
 
             {currentView === 'diagnostics' && (
               <div className="animate-fade-in space-y-6">
-                <div className="max-w-2xl mx-auto">
-                  <Card className="text-center">
-                    <CardHeader>
-                      <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                        <Icon name="Brain" className="text-primary" size={40} />
-                      </div>
-                      <CardTitle className="text-2xl">Диагностика знаний</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                      <p className="text-lg text-muted-foreground">
-                        Пройдите регистрацию на платформе, чтобы проверить свои знания
-                      </p>
-                      <Button onClick={() => setCurrentView('profile')} size="lg" className="w-full">
-                        <Icon name="UserPlus" className="mr-2" size={20} />
-                        Перейти к регистрации
-                      </Button>
-                    </CardContent>
-                  </Card>
+                <div className="mb-8">
+                  <h2 className="text-3xl font-bold mb-2">Диагностика знаний</h2>
+                  <p className="text-muted-foreground">Выберите тему для тестирования или пройдите общий тест</p>
+                </div>
+
+                <Card className="mb-6">
+                  <CardHeader>
+                    <CardTitle>Общий тест</CardTitle>
+                    <CardDescription>10 случайных вопросов из всех тем</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Button onClick={() => startQuiz('all')} size="lg" className="w-full">
+                      <Icon name="PlayCircle" className="mr-2" size={20} />
+                      Начать тест
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                <div className="grid md:grid-cols-2 gap-6">
+                  {topics.map((topic) => {
+                    const topicQuizCount = quizzes.filter(q => q.topic === topic.id).length;
+                    return (
+                      <Card key={topic.id} className="hover:shadow-lg transition-shadow">
+                        <CardHeader>
+                          <div className="flex items-center gap-3 mb-2">
+                            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                              <Icon name={topic.icon as any} className="text-primary" size={20} />
+                            </div>
+                            <div>
+                              <CardTitle className="text-lg">{topic.title}</CardTitle>
+                            </div>
+                          </div>
+                          <CardDescription>{topic.description}</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-muted-foreground">{topicQuizCount} вопросов</span>
+                            <Button onClick={() => startQuiz(topic.id)} variant="secondary">
+                              <Icon name="PlayCircle" className="mr-2" size={16} />
+                              Начать
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -708,15 +735,14 @@ export default function Index() {
 
             {currentView === 'profile' && (
               <div className="animate-fade-in space-y-6">
-                <div className="max-w-2xl mx-auto">
-                  <h2 className="text-3xl font-bold mb-8">Регистрация</h2>
+                <h2 className="text-3xl font-bold mb-8">Профиль</h2>
 
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Регистрация</CardTitle>
-                      <CardDescription>Заполните данные для создания аккаунта</CardDescription>
-                    </CardHeader>
-                    <CardContent>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Личная информация</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {isEditingProfile ? (
                       <div className="space-y-4">
                         <div>
                           <Label htmlFor="login">Логин</Label>
@@ -725,56 +751,51 @@ export default function Index() {
                             value={userName}
                             onChange={(e) => setUserName(e.target.value)}
                             className="mt-1"
-                            placeholder="Введите логин"
                           />
                         </div>
                         <div>
-                          <Label htmlFor="email">Электронная почта</Label>
+                          <Label htmlFor="email">Почта</Label>
                           <Input
                             id="email"
                             type="email"
                             value={userEmail}
                             onChange={(e) => setUserEmail(e.target.value)}
                             className="mt-1"
-                            placeholder="example@mail.com"
                           />
                         </div>
-                        <div>
-                          <Label htmlFor="password">Пароль</Label>
-                          <Input
-                            id="password"
-                            type="password"
-                            value={userPassword}
-                            onChange={(e) => setUserPassword(e.target.value)}
-                            className="mt-1"
-                            placeholder="Минимум 6 символов"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="confirmPassword">Подтвердите пароль</Label>
-                          <Input
-                            id="confirmPassword"
-                            type="password"
-                            value={userConfirmPassword}
-                            onChange={(e) => setUserConfirmPassword(e.target.value)}
-                            className="mt-1"
-                            placeholder="Повторите пароль"
-                          />
-                        </div>
-                        <div className="flex gap-2 pt-2">
-                          <Button className="flex-1">
-                            <Icon name="UserPlus" className="mr-2" size={16} />
-                            Зарегистрироваться
+                        <div className="flex gap-2">
+                          <Button onClick={() => setIsEditingProfile(false)}>
+                            <Icon name="Save" className="mr-2" size={16} />
+                            Сохранить
                           </Button>
-                          <Button variant="outline">
-                            <Icon name="LogOut" className="mr-2" size={16} />
-                            Выйти
+                          <Button variant="outline" onClick={() => setIsEditingProfile(false)}>
+                            Отмена
                           </Button>
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                </div>
+                    ) : (
+                      <div className="space-y-4">
+                        <div className="space-y-3">
+                          <div>
+                            <p className="text-sm text-muted-foreground mb-1">Логин</p>
+                            <p className="font-medium">{userName}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-muted-foreground mb-1">Почта</p>
+                            <p className="font-medium">{userEmail}</p>
+                          </div>
+                        </div>
+                        <Button variant="outline" onClick={() => setIsEditingProfile(true)}>
+                          <Icon name="Edit" className="mr-2" size={16} />
+                          Редактировать
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+
+
               </div>
             )}
 
