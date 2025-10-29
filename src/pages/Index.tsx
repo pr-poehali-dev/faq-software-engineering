@@ -289,11 +289,8 @@ export default function Index() {
   const [userName, setUserName] = useState('student123');
   const [userEmail, setUserEmail] = useState('');
   const [isEditingProfile, setIsEditingProfile] = useState(false);
-  const [testHistory, setTestHistory] = useState<TestHistory[]>([
-    { date: '2024-10-20', topic: 'Жизненный цикл разработки ПО', score: 8, total: 10 },
-    { date: '2024-10-15', topic: 'Паттерны проектирования', score: 7, total: 10 },
-    { date: '2024-10-10', topic: 'Тестирование ПО', score: 9, total: 10 }
-  ]);
+  const [testHistory, setTestHistory] = useState<TestHistory[]>([]);
+  const [completedTopics, setCompletedTopics] = useState<Set<string>>(new Set());
 
   const [currentQuiz, setCurrentQuiz] = useState<Quiz[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -369,6 +366,11 @@ export default function Index() {
       total: currentQuiz.length
     };
     setTestHistory([newHistory, ...testHistory]);
+    
+    if (selectedTopic !== 'all') {
+      setCompletedTopics(prev => new Set(prev).add(selectedTopic));
+    }
+    
     setQuizCompleted(true);
   };
 
@@ -376,11 +378,14 @@ export default function Index() {
     setCurrentView('diagnostics');
   };
 
-  const calculateTotalProgress = () => {
-    if (testHistory.length === 0) return 0;
-    const totalScore = testHistory.reduce((sum, test) => sum + test.score, 0);
-    const totalQuestions = testHistory.reduce((sum, test) => sum + test.total, 0);
-    return Math.round((totalScore / totalQuestions) * 100);
+  const calculateProgress = () => {
+    const totalTopics = topics.length;
+    const completed = completedTopics.size;
+    return Math.round((completed / totalTopics) * 100);
+  };
+
+  const isAllTestsCompleted = () => {
+    return completedTopics.size === topics.length;
   };
 
   return (
@@ -573,39 +578,75 @@ export default function Index() {
 
                 <Card className="mb-6">
                   <CardHeader>
-                    <CardTitle>Общий тест</CardTitle>
-                    <CardDescription>10 случайных вопросов из всех тем</CardDescription>
+                    <CardTitle>Ваш прогресс</CardTitle>
+                    <CardDescription>Пройдено {completedTopics.size} из {topics.length} тестов</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <Button onClick={() => startQuiz('all')} size="lg" className="w-full">
-                      <Icon name="PlayCircle" className="mr-2" size={20} />
-                      Начать тест
-                    </Button>
+                    <div className="space-y-4">
+                      <div>
+                        <div className="flex justify-between mb-2">
+                          <span className="text-sm font-medium">Прогресс обучения</span>
+                          <span className="text-sm font-bold text-primary">{calculateProgress()}%</span>
+                        </div>
+                        <Progress value={calculateProgress()} className="h-3" />
+                      </div>
+                      
+                      {isAllTestsCompleted() ? (
+                        <div className="pt-4 border-t">
+                          <div className="text-center space-y-4">
+                            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-500/10 mb-2">
+                              <Icon name="Trophy" className="text-green-600" size={32} />
+                            </div>
+                            <div>
+                              <h3 className="text-xl font-bold mb-2">Поздравляем!</h3>
+                              <p className="text-muted-foreground mb-4">Вы прошли все тесты. Готовы к экзамену?</p>
+                            </div>
+                            <Button size="lg" className="w-full">
+                              <Icon name="GraduationCap" className="mr-2" size={20} />
+                              Пройти экзамен
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="pt-4 border-t">
+                          <p className="text-sm text-muted-foreground text-center">
+                            Пройдите все {topics.length} тестов, чтобы получить доступ к экзамену
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
 
                 <div className="grid md:grid-cols-2 gap-6">
                   {topics.map((topic) => {
                     const topicQuizCount = quizzes.filter(q => q.topic === topic.id).length;
+                    const isCompleted = completedTopics.has(topic.id);
                     return (
-                      <Card key={topic.id} className="hover:shadow-lg transition-shadow">
+                      <Card key={topic.id} className={`hover:shadow-lg transition-shadow ${isCompleted ? 'border-green-500/50 bg-green-500/5' : ''}`}>
                         <CardHeader>
                           <div className="flex items-center gap-3 mb-2">
                             <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
                               <Icon name={topic.icon as any} className="text-primary" size={20} />
                             </div>
-                            <div>
+                            <div className="flex-1">
                               <CardTitle className="text-lg">{topic.title}</CardTitle>
                             </div>
+                            {isCompleted && (
+                              <Badge variant="secondary" className="bg-green-500/20 text-green-700">
+                                <Icon name="Check" size={14} className="mr-1" />
+                                Пройден
+                              </Badge>
+                            )}
                           </div>
                           <CardDescription>{topic.description}</CardDescription>
                         </CardHeader>
                         <CardContent>
                           <div className="flex items-center justify-between">
                             <span className="text-sm text-muted-foreground">{topicQuizCount} вопросов</span>
-                            <Button onClick={() => startQuiz(topic.id)} variant="secondary">
+                            <Button onClick={() => startQuiz(topic.id)} variant={isCompleted ? "outline" : "secondary"}>
                               <Icon name="PlayCircle" className="mr-2" size={16} />
-                              Начать
+                              {isCompleted ? 'Пройти снова' : 'Начать'}
                             </Button>
                           </div>
                         </CardContent>
@@ -736,6 +777,39 @@ export default function Index() {
             {currentView === 'profile' && (
               <div className="animate-fade-in space-y-6">
                 <h2 className="text-3xl font-bold mb-8">Профиль</h2>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Прогресс обучения</CardTitle>
+                    <CardDescription>Отслеживайте свои достижения</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div>
+                        <div className="flex justify-between mb-2">
+                          <span className="text-sm font-medium">Пройдено тестов</span>
+                          <span className="text-sm font-bold text-primary">{completedTopics.size} из {topics.length}</span>
+                        </div>
+                        <Progress value={calculateProgress()} className="h-3" />
+                      </div>
+                      <div className="text-center pt-2">
+                        <span className="text-4xl font-bold text-primary">{calculateProgress()}%</span>
+                        <p className="text-sm text-muted-foreground mt-1">прогресс обучения</p>
+                      </div>
+                      {isAllTestsCompleted() && (
+                        <div className="pt-4 border-t">
+                          <div className="flex items-center gap-3 p-4 bg-green-500/10 rounded-lg border border-green-500/20">
+                            <Icon name="Trophy" className="text-green-600" size={24} />
+                            <div>
+                              <p className="font-semibold text-green-700">Все тесты пройдены!</p>
+                              <p className="text-sm text-muted-foreground">Вы готовы к экзамену</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
 
                 <Card>
                   <CardHeader>
