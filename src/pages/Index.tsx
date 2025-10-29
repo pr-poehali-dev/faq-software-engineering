@@ -393,7 +393,7 @@ export default function Index() {
             </div>
             <div>
               <h1 className="text-xl font-bold text-sidebar-foreground">SE Guide</h1>
-              <p className="text-xs text-muted-foreground">Программная инженерия</p>
+              <p className="text-xs text-muted-foreground"></p>
             </div>
           </div>
         </div>
