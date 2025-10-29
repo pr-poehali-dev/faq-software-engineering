@@ -45,7 +45,7 @@ const topics: Topic[] = [
     id: 'sdlc',
     title: 'Жизненный цикл разработки ПО',
     icon: 'GitBranch',
-    description: 'Основные этапы и модели разработки программного обеспечения',
+    description: '',
     questions: [
       {
         question: 'Что такое SDLC?',
@@ -73,7 +73,7 @@ const topics: Topic[] = [
     id: 'design-patterns',
     title: 'Паттерны проектирования',
     icon: 'Puzzle',
-    description: 'Типовые решения архитектурных задач в разработке',
+    description: '',
     questions: [
       {
         question: 'Что такое паттерн проектирования?',
@@ -101,7 +101,7 @@ const topics: Topic[] = [
     id: 'testing',
     title: 'Тестирование ПО',
     icon: 'FlaskConical',
-    description: 'Методы и уровни тестирования программных систем',
+    description: '',
     questions: [
       {
         question: 'Какие уровни тестирования существуют?',
@@ -129,7 +129,7 @@ const topics: Topic[] = [
     id: 'version-control',
     title: 'Системы контроля версий',
     icon: 'GitCommitHorizontal',
-    description: 'Git и основные принципы работы с версиями кода',
+    description: '',
     questions: [
       {
         question: 'Зачем нужны системы контроля версий?',
@@ -157,7 +157,7 @@ const topics: Topic[] = [
     id: 'architecture',
     title: 'Архитектура ПО',
     icon: 'Building2',
-    description: 'Принципы построения программных систем',
+    description: '',
     questions: [
       {
         question: 'Что такое архитектура ПО?',
@@ -287,7 +287,7 @@ export default function Index() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Topic[]>([]);
   const [userName, setUserName] = useState('student123');
-  const [userEmail, setUserEmail] = useState('student@se.guide');
+  const [userEmail, setUserEmail] = useState('');
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [testHistory, setTestHistory] = useState<TestHistory[]>([
     { date: '2024-10-20', topic: 'Жизненный цикл разработки ПО', score: 8, total: 10 },
@@ -522,7 +522,6 @@ export default function Index() {
               <div className="animate-fade-in space-y-6">
                 <div className="mb-8">
                   <h2 className="text-3xl font-bold mb-2">База знаний</h2>
-                  <p className="text-muted-foreground">Структурированная информация по программной инженерии</p>
                 </div>
 
                 <div className="grid gap-6">
@@ -795,29 +794,7 @@ export default function Index() {
                   </CardContent>
                 </Card>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Статистика</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-3 gap-6">
-                      <div className="text-center p-4 rounded-lg bg-accent">
-                        <div className="text-3xl font-bold text-primary mb-1">{testHistory.length}</div>
-                        <div className="text-sm text-muted-foreground">Тестов пройдено</div>
-                      </div>
-                      <div className="text-center p-4 rounded-lg bg-accent">
-                        <div className="text-3xl font-bold text-primary mb-1">
-                          {testHistory.reduce((sum, t) => sum + t.score, 0)}
-                        </div>
-                        <div className="text-sm text-muted-foreground">Правильных ответов</div>
-                      </div>
-                      <div className="text-center p-4 rounded-lg bg-accent">
-                        <div className="text-3xl font-bold text-primary mb-1">{calculateTotalProgress()}%</div>
-                        <div className="text-sm text-muted-foreground">Средний балл</div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+
 
               </div>
             )}
