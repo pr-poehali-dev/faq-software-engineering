@@ -463,9 +463,7 @@ export default function Index() {
                     <Icon name="GraduationCap" className="text-primary" size={40} />
                   </div>
                   <h1 className="text-4xl font-bold mb-3">Справочник по программной инженерии</h1>
-                  <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                    Изучайте основы разработки ПО и проверяйте свои знания
-                  </p>
+                  <p className="text-xl text-muted-foreground max-w-2xl mx-auto"></p>
                 </div>
 
                 <div className="max-w-2xl mx-auto">
