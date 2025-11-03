@@ -175,6 +175,13 @@ export default function Index() {
     setNewComment('');
   };
 
+  const deleteComment = (articleId: string, commentId: string) => {
+    setComments(prev => ({
+      ...prev,
+      [articleId]: prev[articleId].filter(c => c.id !== commentId)
+    }));
+  };
+
   return (
     <div className="flex h-screen bg-background">
       <aside className="w-64 border-r border-sidebar-border bg-sidebar flex flex-col p-4">
@@ -378,19 +385,31 @@ export default function Index() {
                     {comments[selectedArticle.id] && comments[selectedArticle.id].length > 0 && (
                       <div className="space-y-4 mb-6">
                         {comments[selectedArticle.id].map((comment) => (
-                          <div key={comment.id} className="border-l-2 border-primary/30 pl-4 py-2">
-                            <div className="flex items-center gap-2 mb-1">
-                              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                                <Icon name="User" size={16} className="text-primary" />
+                          <div key={comment.id} className="border-l-2 border-primary/30 pl-4 py-2 group">
+                            <div className="flex items-center justify-between mb-1">
+                              <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                                  <Icon name="User" size={16} className="text-primary" />
+                                </div>
+                                <div>
+                                  <p className="font-semibold text-sm">{comment.author}</p>
+                                  <p className="text-xs text-muted-foreground">{comment.date}</p>
+                                </div>
                               </div>
-                              <div>
-                                <p className="font-semibold text-sm">{comment.author}</p>
-                                <p className="text-xs text-muted-foreground">{comment.date}</p>
-                              </div>
+                              {comment.author === userName && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
+                                  onClick={() => deleteComment(selectedArticle.id, comment.id)}
+                                >
+                                  <Icon name="Trash2" size={16} className="text-destructive" />
+                                </Button>
+                              )}
                             </div>
                             <p className="text-sm leading-relaxed ml-10">{comment.text}</p>
                           </div>
-                        ))}
+                        ))
                       </div>
                     )}
 
