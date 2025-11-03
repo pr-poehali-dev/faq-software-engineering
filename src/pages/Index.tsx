@@ -9,6 +9,13 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 
 type ViewType = 'home' | 'profile' | 'topics' | 'diagnostics' | 'search-results' | 'article-view';
 
+interface Comment {
+  id: string;
+  author: string;
+  text: string;
+  date: string;
+}
+
 interface Article {
   id: string;
   title: string;
@@ -127,6 +134,8 @@ export default function Index() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Article[]>([]);
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
+  const [comments, setComments] = useState<Record<string, Comment[]>>({});
+  const [newComment, setNewComment] = useState('');
   const [userName, setUserName] = useState('student123');
   const [userEmail, setUserEmail] = useState('');
 
@@ -146,6 +155,24 @@ export default function Index() {
   const openArticle = (article: Article) => {
     setSelectedArticle(article);
     setCurrentView('article-view');
+  };
+
+  const addComment = () => {
+    if (!selectedArticle || !newComment.trim()) return;
+
+    const comment: Comment = {
+      id: Date.now().toString(),
+      author: userName,
+      text: newComment.trim(),
+      date: new Date().toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })
+    };
+
+    setComments(prev => ({
+      ...prev,
+      [selectedArticle.id]: [...(prev[selectedArticle.id] || []), comment]
+    }));
+
+    setNewComment('');
   };
 
   return (
@@ -336,6 +363,53 @@ export default function Index() {
                       {selectedArticle.content.split('\n').map((paragraph, idx) => (
                         paragraph.trim() && <p key={idx} className="mb-4 leading-relaxed">{paragraph}</p>
                       ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Icon name="MessageSquare" size={20} />
+                      Комментарии ({comments[selectedArticle.id]?.length || 0})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {comments[selectedArticle.id] && comments[selectedArticle.id].length > 0 && (
+                      <div className="space-y-4 mb-6">
+                        {comments[selectedArticle.id].map((comment) => (
+                          <div key={comment.id} className="border-l-2 border-primary/30 pl-4 py-2">
+                            <div className="flex items-center gap-2 mb-1">
+                              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                                <Icon name="User" size={16} className="text-primary" />
+                              </div>
+                              <div>
+                                <p className="font-semibold text-sm">{comment.author}</p>
+                                <p className="text-xs text-muted-foreground">{comment.date}</p>
+                              </div>
+                            </div>
+                            <p className="text-sm leading-relaxed ml-10">{comment.text}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="space-y-3">
+                      <Label htmlFor="comment-input">Добавить комментарий</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="comment-input"
+                          placeholder="Добавить комментарий..."
+                          value={newComment}
+                          onChange={(e) => setNewComment(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && addComment()}
+                          className="flex-1"
+                        />
+                        <Button onClick={addComment} disabled={!newComment.trim()}>
+                          <Icon name="Send" size={18} />
+                          Опубликовать
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
