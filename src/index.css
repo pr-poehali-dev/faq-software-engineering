@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -6,44 +6,44 @@
 
 @layer base {
   :root {
-    --background: 210 20% 12%;
-    --foreground: 180 5% 85%;
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
 
-    --card: 213 18% 16%;
-    --card-foreground: 180 5% 85%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
 
-    --popover: 213 18% 16%;
-    --popover-foreground: 180 5% 85%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
 
-    --primary: 202 85% 51%;
+    --primary: 262 83% 58%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 213 18% 22%;
-    --secondary-foreground: 180 5% 85%;
+    --secondary: 280 100% 70%;
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 213 18% 22%;
-    --muted-foreground: 210 10% 60%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
 
-    --accent: 180 48% 60%;
+    --accent: 142 76% 36%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 72% 51%;
+    --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 213 15% 25%;
-    --input: 213 15% 25%;
-    --ring: 202 85% 51%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 262 83% 58%;
 
-    --radius: 0.5rem;
+    --radius: 1rem;
 
-    --sidebar-background: 210 22% 10%;
-    --sidebar-foreground: 180 5% 85%;
-    --sidebar-primary: 202 85% 51%;
+    --sidebar-background: 262 83% 58%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 280 100% 70%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 213 18% 18%;
-    --sidebar-accent-foreground: 180 5% 85%;
-    --sidebar-border: 213 15% 20%;
-    --sidebar-ring: 202 85% 51%;
+    --sidebar-accent: 262 70% 65%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 262 60% 50%;
+    --sidebar-ring: 280 100% 70%;
   }
 }
 
@@ -54,6 +54,6 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: "Inter", sans-serif;
+    font-family: "Poppins", sans-serif;
   }
 }
