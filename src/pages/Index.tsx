@@ -409,7 +409,7 @@ export default function Index() {
                             </div>
                             <p className="text-sm leading-relaxed ml-10">{comment.text}</p>
                           </div>
-                        ))
+                        ))}
                       </div>
                     )}
 
